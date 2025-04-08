@@ -1,6 +1,5 @@
 import express from 'express';
 import { Sequelize } from 'sequelize';
-import UserModel from './models/User.js';
 import ProductModel from './models/Product.js';
 import { defaultProducts } from './defaultData/defaultProducts.js';
 
@@ -19,35 +18,18 @@ sequelize.authenticate()
   .catch(err => console.error('Unable to connect to the database:', err));
 
 // Initialize models
-const User = UserModel(sequelize);
 const Product = ProductModel(sequelize);
 
 // Middleware
 app.use(express.json());
+app.use('/images', express.static('images')); // Serve static files from the images folder
 
 // Routes
 app.get('/', (req, res) => {
   res.send('Hello, Express with ES Modules!');
 });
 
-app.get('/users', async (req, res) => {
-  try {
-    const users = await User.findAll();
-    res.json(users);
-  } catch (err) {
-    res.status(500).json({ error: 'Failed to fetch users' });
-  }
-});
 
-app.post('/users', async (req, res) => {
-  try {
-    const { name, email } = req.body;
-    const newUser = await User.create({ name, email });
-    res.status(201).json(newUser);
-  } catch (err) {
-    res.status(400).json({ error: 'Failed to create user' });
-  }
-});
 
 app.get('/products', async (req, res) => {
   try {
