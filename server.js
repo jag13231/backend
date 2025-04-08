@@ -1,5 +1,6 @@
 import express from 'express';
 import { Sequelize } from 'sequelize';
+import UserModel from './models/User.js';
 
 const app = express();
 const PORT = 3000;
@@ -15,20 +16,8 @@ sequelize.authenticate()
   .then(() => console.log('Database connected successfully.'))
   .catch(err => console.error('Unable to connect to the database:', err));
 
-// Define a sample model
-const User = sequelize.define('User', {
-  name: {
-    type: Sequelize.STRING,
-    allowNull: false
-  },
-  email: {
-    type: Sequelize.STRING,
-    unique: true,
-    allowNull: false
-  }
-});
-
-
+// Initialize models
+const User = UserModel(sequelize);
 
 // Middleware
 app.use(express.json());
@@ -58,8 +47,7 @@ app.post('/users', async (req, res) => {
 });
 
 // Sync database and create tables
-sequelize.sync()
-
+sequelize.sync();
 
 // Start server
 app.listen(PORT, () => {
