@@ -1,6 +1,8 @@
 import express from 'express';
 import { Sequelize } from 'sequelize';
 import UserModel from './models/User.js';
+import ProductModel from './models/Product.js';
+import { defaultProducts } from './defaultData/defaultProducts.js';
 
 const app = express();
 const PORT = 3000;
@@ -18,6 +20,7 @@ sequelize.authenticate()
 
 // Initialize models
 const User = UserModel(sequelize);
+const Product = ProductModel(sequelize);
 
 // Middleware
 app.use(express.json());
@@ -46,8 +49,33 @@ app.post('/users', async (req, res) => {
   }
 });
 
+app.get('/products', async (req, res) => {
+  try {
+    const products = await Product.findAll();
+    res.json(products);
+  } catch (err) {
+    res.status(500).json({ error: 'Failed to fetch products' });
+  }
+});
+
 // Sync database and create tables
-sequelize.sync();
+sequelize.sync().then(async () => {
+  const productCount = await Product.count();
+  if (productCount === 0) {
+    await Product.bulkCreate(defaultProducts.map(product => ({
+      id: product.id,
+      image: product.image,
+      name: product.name,
+      ratingStars: product.rating.stars,
+      ratingCount: product.rating.count,
+      priceCents: product.priceCents,
+      keywords: product.keywords
+    })));
+    console.log('Default products have been added to the database.');
+  } else {
+    console.log('Products already exist in the database.');
+  }
+});
 
 // Start server
 app.listen(PORT, () => {
