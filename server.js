@@ -2,9 +2,11 @@ import express from 'express';
 import { Sequelize } from 'sequelize';
 import ProductModel from './models/Product.js';
 import { defaultProducts } from './defaultData/defaultProducts.js';
+import { getAllDeliveryOptions } from './models/DeliveryOption.js'; // Update import for ES module
 
 const app = express();
 const PORT = 3000;
+
 
 // Initialize Sequelize with SQLite
 const sequelize = new Sequelize({
@@ -29,14 +31,21 @@ app.get('/', (req, res) => {
   res.send('Hello, Express with ES Modules!');
 });
 
-
-
 app.get('/products', async (req, res) => {
   try {
     const products = await Product.findAll();
     res.json(products);
   } catch (err) {
     res.status(500).json({ error: 'Failed to fetch products' });
+  }
+});
+
+app.get('/delivery-options', (req, res) => {
+  try {
+    const deliveryOptions = getAllDeliveryOptions();
+    res.json(deliveryOptions);
+  } catch (err) {
+    res.status(500).json({ error: 'Failed to fetch delivery options' });
   }
 });
 
