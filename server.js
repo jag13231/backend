@@ -111,6 +111,48 @@ app.post('/cart-items', async (req, res) => {
   }
 });
 
+app.put('/cart-items/:productId', async (req, res) => {
+  try {
+    const { productId } = req.params;
+    const { quantity, deliveryOptionId } = req.body;
+
+    // Validate quantity if provided
+    if (quantity !== undefined) {
+      if (!Number.isInteger(quantity) || quantity < 1 || quantity > 10) {
+        return res.status(400).json({ error: 'Quantity must be a number between 1 and 10.' });
+      }
+    }
+
+    // Validate deliveryOptionId if provided
+    if (deliveryOptionId !== undefined) {
+      const deliveryOptions = getAllDeliveryOptions();
+      const isValidOption = deliveryOptions.some(option => option.id === deliveryOptionId);
+      if (!isValidOption) {
+        return res.status(400).json({ error: 'Invalid delivery option ID.' });
+      }
+    }
+
+    // Check if product exists in the cart
+    const cart = getCart();
+    const existingCartItem = cart.find(item => item.productId === productId);
+    if (!existingCartItem) {
+      return res.status(404).json({ error: 'Product not found in the cart.' });
+    }
+
+    // Update cart item
+    const updatedCartItem = {
+      ...existingCartItem,
+      ...(quantity !== undefined && { quantity }),
+      ...(deliveryOptionId !== undefined && { deliveryOptionId })
+    };
+    updateCartItem(productId, updatedCartItem);
+
+    res.status(200).json({ message: 'Cart item updated successfully.', cartItem: updatedCartItem });
+  } catch (err) {
+    res.status(500).json({ error: 'Failed to update cart item.' });
+  }
+});
+
 // Sync database and create tables
 sequelize.sync().then(async () => {
   const productCount = await Product.count();
