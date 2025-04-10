@@ -153,6 +153,28 @@ app.put('/cart-items/:productId', async (req, res) => {
   }
 });
 
+app.delete('/cart-items/:productId', (req, res) => {
+  try {
+    const { productId } = req.params;
+
+    // Check if product exists in the cart
+    const cart = getCart();
+    const existingCartItem = cart.find(item => item.productId === productId);
+    if (!existingCartItem) {
+      return res.status(404).json({ error: 'Product not found in the cart.' });
+    }
+
+    // Remove product from the cart
+    const updatedCart = cart.filter(item => item.productId !== productId);
+    // Update the cart storage with the filtered cart
+    updateCartItem(productId, { remove: true }); // Assuming `remove: true` removes the item from storage
+
+    res.status(200).json({ message: 'Product removed from cart successfully.' });
+  } catch (err) {
+    res.status(500).json({ error: 'Failed to remove product from cart.' });
+  }
+});
+
 // Sync database and create tables
 sequelize.sync().then(async () => {
   const productCount = await Product.count();
