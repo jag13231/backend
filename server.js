@@ -3,7 +3,7 @@ import { Sequelize } from 'sequelize';
 import ProductModel from './models/Product.js';
 import { defaultProducts } from './defaultData/defaultProducts.js';
 import { getAllDeliveryOptions } from './models/DeliveryOption.js'; // Update import for ES module
-import { getCart } from './models/Cartitem.js'; // Import the getCart function
+import { getCart, addToCart, updateCartItem } from './models/Cartitem.js'; // Import cart functions
 
 const app = express();
 const PORT = 3000;
@@ -72,6 +72,42 @@ app.get('/cart-items', async (req, res) => {
     res.json(resolvedCartItems);
   } catch (err) {
     res.status(500).json({ error: 'Failed to fetch cart items' });
+  }
+});
+
+app.post('/cart-items', async (req, res) => {
+  try {
+    const { productId, quantity } = req.body;
+
+    // Validate quantity
+    if (!Number.isInteger(quantity) || quantity < 1 || quantity > 10) {
+      return res.status(400).json({ error: 'Quantity must be a number between 1 and 10.' });
+    }
+
+    // Check if product exists in the database
+    const product = await Product.findOne({ where: { id: productId } });
+    if (!product) {
+      return res.status(404).json({ error: 'Product not found.' });
+    }
+
+    // Check if product already exists in the cart
+    const cart = getCart();
+    const existingCartItem = cart.find(item => item.productId === productId);
+
+    let cartItem;
+    if (existingCartItem) {
+      // Update quantity if product already exists in the cart
+      updateCartItem(productId, { quantity: existingCartItem.quantity + quantity });
+      cartItem = { ...existingCartItem, quantity: existingCartItem.quantity + quantity };
+    } else {
+      // Add new product to the cart with default deliveryOptionId
+      cartItem = { productId, quantity, deliveryOptionId: "1" };
+      addToCart(cartItem);
+    }
+
+    res.status(200).json({ message: 'Product added to cart successfully.', cartItem });
+  } catch (err) {
+    res.status(500).json({ error: 'Failed to add product to cart.' });
   }
 });
 
