@@ -3,6 +3,7 @@ import { Sequelize } from 'sequelize';
 import ProductModel from './models/Product.js';
 import { defaultProducts } from './defaultData/defaultProducts.js';
 import { getAllDeliveryOptions } from './models/DeliveryOption.js'; // Update import for ES module
+import { getCart } from './models/Cartitem.js'; // Import the getCart function
 
 const app = express();
 const PORT = 3000;
@@ -46,6 +47,31 @@ app.get('/delivery-options', (req, res) => {
     res.json(deliveryOptions);
   } catch (err) {
     res.status(500).json({ error: 'Failed to fetch delivery options' });
+  }
+});
+
+app.get('/cart-items', async (req, res) => {
+  try {
+    const expand = req.query.expand;
+    const cartItems = getCart().map(async (item) => {
+      const baseItem = {
+        ...item,
+        createdAt: new Date().toISOString(), // Add createdAt field
+        updatedAt: new Date().toISOString()  // Add updatedAt field
+      };
+
+      if (expand === 'product') {
+        const product = await Product.findOne({ where: { id: item.productId } });
+        return { ...baseItem, product };
+      }
+
+      return baseItem;
+    });
+
+    const resolvedCartItems = await Promise.all(cartItems);
+    res.json(resolvedCartItems);
+  } catch (err) {
+    res.status(500).json({ error: 'Failed to fetch cart items' });
   }
 });
 
